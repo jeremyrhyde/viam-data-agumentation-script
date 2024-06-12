@@ -5,7 +5,7 @@ import typing as ty
 import tensorflow as tf
 from keras import Model, callbacks
 import numpy as np
-import training_utils, training_custom
+from model import *
 
 single_label = "MODEL_TYPE_SINGLE_LABEL_CLASSIFICATION"
 multi_label = "MODEL_TYPE_MULTI_LABEL_CLASSIFICATION"
@@ -38,7 +38,7 @@ def get_neural_network_params(
     if model_type == single_label:
         units = num_classes
         activation = "softmax"
-        loss = tf.keras.losses.categorical_crossentropy                                      # important
+        loss = tf.keras.losses.categorical_crossentropy
         metrics = (
             tf.keras.metrics.CategoricalAccuracy(),
             tf.keras.metrics.Precision(),
@@ -100,7 +100,7 @@ def create_dataset_classification(
         )
 
     def mapping_fnc(x, y):
-        return training_utils.parse_image_and_encode_labels(x, y, all_labels, model_type, img_size)
+        return parse_image_and_encode_labels(x, y, all_labels, model_type, img_size)
 
     # Parse and preprocess observations in parallel
     dataset = dataset.map(mapping_fnc, num_parallel_calls=num_parallel_calls)
@@ -159,7 +159,7 @@ def build_and_compile_classification(
     y = tf.keras.Sequential(
         [
             preprocessing,
-            training_custom.add_data_augmentation_layer(),   # custom data augmentation add-on
+            add_data_augmentation_layer(),   # custom data augmentation add-on
             base_model,
             global_pooling,
             classification,
@@ -170,7 +170,7 @@ def build_and_compile_classification(
 
     model.compile(
         loss=loss_fnc,
-        optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),                              # important
+        optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
         metrics=[metrics],
     )
     return model
@@ -192,10 +192,10 @@ def save_model_metrics_classification(
     # we reverse the list storing the tracked values and take the last occurence.
     monitored_metric_max_idx = len(monitored_val) - np.argmax(monitored_val[::-1]) - 1
     for i, key in enumerate(model.metrics_names):
-        metrics["train_" + key] = training_utils.get_rounded_number(
+        metrics["train_" + key] = get_rounded_number(
             loss_history.history[key][monitored_metric_max_idx], ROUNDING_DIGITS
         )
-        metrics["test_" + key] = training_utils.get_rounded_number(test_metrics[i], ROUNDING_DIGITS)
+        metrics["test_" + key] = get_rounded_number(test_metrics[i], ROUNDING_DIGITS)
 
     # Save the loss and test metrics as model metrics
     filename = os.path.join(model_dir, metrics_filename)
@@ -216,7 +216,6 @@ def save_tflite_classification(
     converter.target_spec.supported_ops = TFLITE_OPS
     tflite_model = converter.convert()
 
-    # Save the model to GCS
     filename = os.path.join(model_dir, f"{model_name}.tflite")
     with open(filename, "wb") as f:
         f.write(tflite_model)
@@ -249,7 +248,7 @@ if __name__ == "__main__":
 
     # Read dataset file
     LABELS = ["red", "no_red"]                                             # add specific labels - can this be an arg?
-    image_filenames, image_labels = training_utils.parse_filenames_and_labels_from_json(DATA_JSON, LABELS)
+    image_filenames, image_labels = parse_filenames_and_labels_from_json(DATA_JSON, LABELS)
     # Generate 80/20 split for train and test data
     train_dataset, test_dataset = create_dataset_classification(
         filenames=image_filenames,
@@ -265,7 +264,7 @@ if __name__ == "__main__":
     )
 
     # Build and compile model
-    with strategy.scope():                                                               # look into this
+    with strategy.scope():
         model = build_and_compile_classification(
             LABELS, multi_label, IMG_SIZE + (3,)
         )
@@ -289,7 +288,7 @@ if __name__ == "__main__":
         # "no longer improving" being further defined as "for at least 'patience' epochs"
         patience=5,
         # Default lower bound on learning rate
-        min_lr=0,                                                                      # important
+        min_lr=0,
     )
 
     # Train model on data
@@ -310,7 +309,7 @@ if __name__ == "__main__":
         test_dataset,
     )
     # Save labels.txt file
-    training_utils.save_labels(LABELS, MODEL_DIR)
+    save_labels(LABELS, MODEL_DIR)
     # Convert the model to tflite
     save_tflite_classification(
         model, MODEL_DIR, "beepboop", IMG_SIZE + (3,)

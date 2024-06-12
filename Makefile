@@ -7,9 +7,9 @@ TAG_VERSION?=$(shell git tag --points-at | sort -Vr | head -n1)
 SHELL := /usr/bin/env bash 
 
 # Default values for upladoing training script
-ORG_ID = 53e2a500-3fa0-4ad6-9844-098769838d87
+ORG_ID = <ADD_YOUR_ORG_ID_HERE>
 SCRIPT_NAME = data_augmentation_test
-SCRIPT_VERSION = 0.3
+SCRIPT_VERSION = 0.1
 
 # Make commands
 default: clean build

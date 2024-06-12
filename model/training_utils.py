@@ -81,11 +81,6 @@ def decode_image(image):
     )
 
 def check_type_and_decode_image(image_string_tensor):
-    """Parse an image from gcs and decode it. Ungzip the image from gcs if zipped
-    Args:
-        image_string_tensor: the tensored form of an image gcs string
-    """
-    # Read an image from gcs
     image_string = tf.io.read_file(image_string_tensor)
     return decode_image(image_string)
 
