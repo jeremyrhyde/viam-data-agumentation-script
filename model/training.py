@@ -246,15 +246,17 @@ if __name__ == "__main__":
     NUM_WORKERS = strategy.num_replicas_in_sync
     GLOBAL_BATCH_SIZE = BATCH_SIZE * NUM_WORKERS
 
+    task_type = single_label
+
     # Read dataset file
-    LABELS = ["red", "no_red"]                                             # add specific labels - can this be an arg?
+    LABELS = ["red", "no_red"]                                           
     image_filenames, image_labels = parse_filenames_and_labels_from_json(DATA_JSON, LABELS)
     # Generate 80/20 split for train and test data
     train_dataset, test_dataset = create_dataset_classification(
         filenames=image_filenames,
         labels=image_labels,
         all_labels=LABELS,
-        model_type=multi_label,
+        model_type=task_type,
         img_size=IMG_SIZE,
         train_split=0.8,
         batch_size=GLOBAL_BATCH_SIZE,
@@ -266,13 +268,13 @@ if __name__ == "__main__":
     # Build and compile model
     with strategy.scope():
         model = build_and_compile_classification(
-            LABELS, multi_label, IMG_SIZE + (3,)
+            LABELS, task_type, IMG_SIZE + (3,)
         )
 
     # Get callbacks for training classification
     callbackEarlyStopping = tf.keras.callbacks.EarlyStopping(
     # Stop training when `monitor` value is no longer improving
-    monitor="binary_accuracy",
+    monitor="categorical_accuracy",
         # "no longer improving" being defined as "no better than 'min_delta' less"
         min_delta=1e-3,
         # "no longer improving" being further defined as "for at least 'patience' epochs"

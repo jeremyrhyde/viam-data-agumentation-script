@@ -8,7 +8,7 @@ SHELL := /usr/bin/env bash
 
 # Default values for upladoing training script
 ORG_ID = <ADD_YOUR_ORG_ID_HERE>
-SCRIPT_NAME = data_augmentation_test
+SCRIPT_NAME = red_candy_augmented
 SCRIPT_VERSION = 0.1
 
 # Make commands
